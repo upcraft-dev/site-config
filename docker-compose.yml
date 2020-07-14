@@ -26,7 +26,7 @@ services:
             - SSL_PRIVATE_KEY_PATH
         volumes:
             - ./proxy:/etc/traefik
-            - ./letsencrypt:/etc/letsencrypt
+            - ./letsencrypt:/etc/letsencrypt:ro
             - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
         networks:
             - traefik
