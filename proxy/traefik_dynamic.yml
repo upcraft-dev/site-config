@@ -1,3 +1,16 @@
+tls:
+    options:
+        default:
+            minVersion: "VersionTLS12"
+    certificates:
+        - certFile: {{ env "SSL_CERT_CHAIN_PATH" }}
+          keyFile: {{ env "SSL_PRIVATE_KEY_PATH" }}
+    stores:
+        default:
+            defaultCertificate:
+                certFile: {{ env "SSL_CERT_CHAIN_PATH" }}
+                keyFile: {{ env "SSL_PRIVATE_KEY_PATH" }}
+
 http:
     routers:
         dashboard:

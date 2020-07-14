@@ -22,10 +22,11 @@ services:
             - 443:443
         environment:
             - TRAEFIK_DOMAIN
+            - SSL_CERT_CHAIN_PATH
+            - SSL_PRIVATE_KEY_PATH
         volumes:
             - ./proxy:/etc/traefik
-            - ${SSL_CERT_CHAIN_PATH}:/.ssl/cert.pem
-            - ${SSL_PRIVATE_KEY_PATH}:/.ssl/privkey.pem
+            - ./letsencrypt:/etc/letsencrypt
             - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
         networks:
             - traefik
