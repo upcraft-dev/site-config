@@ -1,0 +1,6 @@
+# certbot generated files and SSL certs
+letsencrypt/
+
+# global configuration files
+*.env
+
