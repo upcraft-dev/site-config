@@ -1,0 +1,19 @@
+draft: false
+
+acme:
+  email_account: ${LETSENCRYPT_EMAIL}
+  staging: false # use LetsEncrypt's staging servers for testing
+
+profiles:
+- name: main_cloudflare
+  provider: cloudflare
+  provider_options:
+    auth_token: ${CLOUDFLARE_AUTH_TOKEN}
+    zone_id: ${CLOUDFLARE_ZONE_ID}
+
+certificates:
+- profile: main_cloudflare
+  domains:
+    - "*.${LETSENCRYPT_DOMAIN}"
+    - ${LETSENCRYPT_DOMAIN}
+

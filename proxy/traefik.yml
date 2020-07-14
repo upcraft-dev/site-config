@@ -1,0 +1,20 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: true
+serversTransport:
+  insecureSkipVerify: true
+entryPoints:
+  https:
+    address: :443
+    http:
+      tls: true
+providers:
+  docker:
+    watch: true
+    defaultRule: "Host(`{{ normalize .Name }}.{{ .Env.TRAEFIK_DOMAIN }}`)"
+    exposedByDefault: false 
+api:
+  insecure: true
+  dashboard: true
+  debug: false
+ping: true

@@ -1,0 +1,69 @@
+version: '3'
+
+services:
+    robocert: # automatically renew letsencrypt certificates
+        container_name: certbot
+        image: adferrand/dnsrobocert
+        environment:
+            - CLOUDFLARE_AUTH_TOKEN
+            - CLOUDFLARE_ZONE_ID
+            - LETSENCRYPT_EMAIL
+            - LETSENCRYPT_DOMAIN
+        volumes:
+            - ./letsencrypt:/etc/letsencrypt
+            - ./dnsrobocert:/etc/dnsrobocert
+        restart: always
+
+    traefik: # reverse proxy to handle all incoming requests
+        container_name: reverse_proxy
+        hostname: reverse_proxy
+        image: traefik
+        ports:
+            - 443:443
+            # web UI, only active if api.insecure is set
+            - 8080:8080
+        environment:
+            - TRAEFIK_DOMAIN
+        volumes:
+            - ./proxy:/etc/traefik
+            - ${SSL_CERT_CHAIN_PATH}:/.ssl/cert.pem
+            - ${SSL_PRIVATE_KEY_PATH}:/.ssl/privkey.pem
+            - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
+        networks:
+            - traefik
+        restart: always
+
+    static: # small webserver to serve static content
+        container_name: static_content
+        image: pierrezemb/gostatic
+        volumes:
+            - ./static:/srv/http
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.static.entrypoints=https"
+            - "traefik.http.routers.static.rule=Host(`static.${TRAEFIK_DOMAIN}`)"
+            - "traefik.http.services.static.loadbalancer.server.port=8043"
+            - "traefik.protocol=http"
+        networks:
+            - traefik
+        restart: always
+
+    temp-redirect: # redirects all traffic to github page. this will be removed once an actual site is made
+        container_name: tmp_redirect
+        image: cusspvz/redirect
+        environment:
+            - HSTS=1
+            - HSTS_INCLUDE_SUBDOMAINS=1
+            - REDIRECT=https://github.com/upcraftlp
+            - REDIRECT_TYPE=redirect
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.temp-redirect.entrypoints=https"
+            - "traefik.http.routers.temp-redirect.rule=Host(`${TRAEFIK_DOMAIN}`)"
+            - "traefik.protocol=http"
+        networks:
+            - traefik
+        restart: always
+
+networks:
+    traefik:
