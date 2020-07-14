@@ -14,8 +14,8 @@ tls:
 http:
     routers:
         dashboard:
-            entrypoints:
+            entryPoints:
                 - "https"
-            rule: Host(`dashboard.{{ env "TRAEFIK_DOMAIN" }}`)
-            service: "api@internal"
+            rule: PathPrefix(`/api`) || PathPrefix(`/dashboard`)
+            service: api@internal
             tls: {}
