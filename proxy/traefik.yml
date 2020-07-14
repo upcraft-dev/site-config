@@ -1,20 +1,29 @@
 global:
   checkNewVersion: true
   sendAnonymousUsage: true
-serversTransport:
-  insecureSkipVerify: true
+tls:
+  options:
+    default:
+      minVersion: "VersionTLS12"
+      maxVersion: "VersionTLS13"
+  certificates:
+    certFile: "/.ssl/cert.pem"
+    keyFile: "/.ssl/privkey.pem"
 entryPoints:
   https:
     address: :443
     http:
-      tls: true
+      tls: {}
 providers:
   docker:
     watch: true
     defaultRule: "Host(`{{ normalize .Name }}.{{ .Env.TRAEFIK_DOMAIN }}`)"
     exposedByDefault: false 
+  file:
+    filename: /etc/traefik/traefik_dynamic.yml
 api:
-  insecure: true
+  insecure: false # if true, will expose api on https port 8080
   dashboard: true
   debug: false
-ping: true
+ping:
+  entryPoint: "https"

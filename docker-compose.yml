@@ -20,8 +20,6 @@ services:
         image: traefik
         ports:
             - 443:443
-            # web UI, only active if api.insecure is set
-            - 8080:8080
         environment:
             - TRAEFIK_DOMAIN
         volumes:

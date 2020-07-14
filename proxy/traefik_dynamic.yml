@@ -1,0 +1,8 @@
+http:
+    routers:
+        dashboard:
+            entrypoints:
+                - "https"
+            rule: Host(`dashboard.{{ env "TRAEFIK_DOMAIN" }}`)
+            service: "api@internal"
+            tls: {}
