@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
     robocert: # automatically renew letsencrypt certificates
@@ -12,7 +12,7 @@ services:
         volumes:
             - ./letsencrypt:/etc/letsencrypt
             - ./dnsrobocert:/etc/dnsrobocert
-        restart: always
+        # networks: none - only interacts with letsencrypt certs
 
     traefik: # reverse proxy to handle all incoming requests
         container_name: reverse_proxy
@@ -29,10 +29,40 @@ services:
             - ./letsencrypt:/etc/letsencrypt:ro
             - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
         networks:
+            - identity_provider
+            - traefik_static
+            - traefik_site
+
+    traefik-auth: # auth handler for traefik dashboard
+        depends_on:
             - traefik
-        restart: always
+            - keycloak
+        container_name: traefik-auth
+        hostname: traefik-auth
+        image: thomseddon/traefik-forward-auth
+        environment:
+          - DEFAULT_PROVIDER=oidc
+          - LOGOUT_REDIRECT=${TRAEFIK_DOMAIN}
+          - AUTH_HOST=auth.${TRAEFIK_DOMAIN}
+          - COOKIE_DOMAIN=${TRAEFIK_DOMAIN}
+          - SECRET=${TRAEFIK_AUTH_RANDOM_SECRET}
+
+          - PROVIDERS_OIDC_CLIENT_ID=${KEYCLOAK_DASHBOARD_CLIENT_ID}
+          - PROVIDERS_OIDC_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+          - "PROVIDERS_OIDC_ISSUER_URL=http://keycloak:8080/auth/realms/${KEYCLOAK_DASHBOARD_REALM_NAME}"
+          
+        labels:
+            - "traefik.enable=true"
+            - traefik.http.routers.traefik-auth.entrypoints=https
+            - "traefik.http.routers.traefik-auth.rule=Host(`auth.${TRAEFIK_DOMAIN}`)"
+            - "traefik.http.middlewares.keycloak.forwardAuth.address=http://traefik-auth:4181"
+            - "traefik.http.services.traefik-auth.loadbalancer.server.port=4181"
+        networks:
+            - identity_provider
 
     static: # small webserver to serve static content
+        depends_on:
+            - traefik
         container_name: static_content
         image: pierrezemb/gostatic
         volumes:
@@ -44,10 +74,11 @@ services:
             - "traefik.http.services.static.loadbalancer.server.port=8043"
             - "traefik.protocol=http"
         networks:
-            - traefik
-        restart: always
+            - traefik_static
 
     temp-redirect: # redirects all traffic to github page. this will be removed once an actual site is made
+        depends_on: 
+            - traefik
         container_name: tmp_redirect
         image: cusspvz/redirect
         environment:
@@ -61,8 +92,51 @@ services:
             - "traefik.http.routers.temp-redirect.rule=Host(`${TRAEFIK_DOMAIN}`)"
             - "traefik.protocol=http"
         networks:
-            - traefik
-        restart: always
+            - traefik_site
+
+    keycloak_db: # postgreSQL DB used for keycloak auth
+        container_name: postgres_keycloak
+        hostname: keycloak_db
+        image: postgres:alpine
+        environment:
+            - POSTGRES_DB=${KEYCLOAK_DB_NAME}
+            - POSTGRES_USER=${KEYCLOAK_DB_USER}
+            - POSTGRES_PASSWORD=${KEYCLOAK_DB_PASSWORD}
+            - POSTGRES_ROOT_PASSWORD=${KEYCLOAK_DB_ROOT_PASSWORD}
+        volumes:
+            - ./postgres/keycloak:/var/lib/postgresql/data
+        networks:
+            - keycloak_db
+
+    keycloak:
+        image: jboss/keycloak
+        depends_on:
+            - keycloak_db
+        hostname: keycloak
+        environment:
+            - DB_VENDOR=postgres
+            - DB_ADDR=keycloak_db
+            - DB_DATABASE=${KEYCLOAK_DB_NAME}
+            - DB_USER=${KEYCLOAK_DB_USER}
+            - DB_PASSWORD=${KEYCLOAK_DB_PASSWORD}
+            - PROXY_ADDRESS_FORWARDING=true
+            - KEYCLOAK_LOGLEVEL=INFO
+            - KEYCLOAK_USER=${KEYCLOAK_ADMIN_USER}
+            - KEYCLOAK_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+            - keycloak.profile.feature.docker=enabled
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.keycloak.entrypoints=https"
+            - "traefik.http.routers.keycloak.rule=Host(`${TRAEFIK_DOMAIN}`) && PathPrefix(`/auth`)"
+            - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+            - "traefik.frontend.passHostHeader=true"
+            - "traefik.protocol=http"
+        networks:
+            - identity_provider
+            - keycloak_db
 
 networks:
-    traefik:
+    identity_provider:
+    traefik_site:
+    traefik_static:
+    keycloak_db:

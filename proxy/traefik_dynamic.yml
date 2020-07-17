@@ -16,6 +16,14 @@ http:
         dashboard:
             entryPoints:
                 - "https"
-            rule: PathPrefix(`/api`) || PathPrefix(`/dashboard`)
+            rule: Host(`{{ env "TRAEFIK_DOMAIN" }}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
             service: api@internal
+            middlewares:
+                #- "keycloak"
             tls: {}
+
+    middlewares:
+        keycloak:
+            forwardAuth:
+                authResponseHeaders:
+                    - "X-Forwarded-User"

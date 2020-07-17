@@ -4,3 +4,5 @@ letsencrypt/
 # global configuration files
 *.env
 
+
+postgres/

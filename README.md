@@ -19,7 +19,7 @@
 | https://upcraft.dev            | **[WIP]** main website                              |
 | https://upcraft.dev/dashboard/ | **[WIP]** the traefik dashboard                     |
 | https://static.upcraft.dev     | static files for api usage                          |
-| https://auth.upcraft.dev       | **[WIP]** authentication provider                   |
+| https://upcraft.dev/auth/      | **[WIP]** KeyCloak authentication provider          |
 | https://git.upcraft.dev        | **[WIP]** redirect to github profile                |
 | https://onyx.upcraft.dev       | **[WIP]** onyx profile (https://onyxstudios.dev)    |
 | https://voxel.upcraft.dev      | **[WIP]** voxel games profile (https://voxel.games) |
