@@ -55,7 +55,6 @@ services:
             - "traefik.enable=true"
             - traefik.http.routers.traefik-auth.entrypoints=https
             - "traefik.http.routers.traefik-auth.rule=Host(`auth.${TRAEFIK_DOMAIN}`)"
-            - "traefik.http.middlewares.keycloak.forwardAuth.address=http://traefik-auth:4181"
             - "traefik.http.services.traefik-auth.loadbalancer.server.port=4181"
         networks:
             - identity_provider

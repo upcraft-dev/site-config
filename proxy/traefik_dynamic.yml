@@ -25,5 +25,6 @@ http:
     middlewares:
         keycloak:
             forwardAuth:
+                address: "http://traefik-auth@docker:4181"
                 authResponseHeaders:
                     - "X-Forwarded-User"
