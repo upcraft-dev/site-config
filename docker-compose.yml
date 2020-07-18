@@ -108,10 +108,11 @@ services:
             - keycloak_db
 
     keycloak:
+        container_name: keycloak
+        hostname: keycloak
         image: jboss/keycloak
         depends_on:
             - keycloak_db
-        hostname: keycloak
         environment:
             - DB_VENDOR=postgres
             - DB_ADDR=keycloak_db
